@@ -1,8 +1,8 @@
 package protobuf
 
 import (
-	"TestGo/mustang/log"
-	"TestGo/mustang/network"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"

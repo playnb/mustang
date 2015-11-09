@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"TestGo/mustang/log"
+	"github.com/playnb/mustang/log"
 	"errors"
 	"fmt"
 	"net"

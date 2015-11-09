@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"TestGo/mustang/log"
+	"github.com/playnb/mustang/log"
 	"net/http"
 )
 

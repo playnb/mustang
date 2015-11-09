@@ -1,9 +1,9 @@
 package gate
 
 import (
-	//"TestGo/mustang/log"
-	"TestGo/mustang/network"
-	"TestGo/mustang/network/protobuf"
+	//"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/mustang/network/protobuf"
 	//"github.com/golang/protobuf/proto"
 	//"reflect"
 	"time"

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"TestGo/mustang/network/protobuf"
+	"github.com/playnb/mustang/network/protobuf"
 )
 
 //定义一些全局变量在这里

@@ -1,7 +1,7 @@
 package network
 
 import (
-	"TestGo/mustang/log"
+	"github.com/playnb/mustang/log"
 	"github.com/gorilla/websocket"
 	"net"
 	"net/http"
