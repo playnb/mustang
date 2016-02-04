@@ -1,14 +1,21 @@
 package protobuf
 
 import (
-	"github.com/playnb/mustang/log"
-	"github.com/playnb/mustang/network"
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
 	"math"
 	"reflect"
 )
+
+//基于protobuf的处理器
+var ProtobufProcess = NewProcessor()
+
+func NewProtobufProcessor() *Processor {
+	return NewProcessor()
+}
 
 //-----------------------------------------------
 //| 16bit NameSize | MsgName | ptotobuf message |
@@ -51,6 +58,7 @@ func (p *Processor) Register(msg proto.Message, msgHandler network.MsgHandler) {
 	i.msgName = msgName
 	i.msgHandler = msgHandler
 	p.msgInfo[msgName] = i
+	log.Trace("Register Msg Handle: %s", msgName)
 }
 
 /*
@@ -77,10 +85,12 @@ func (p *Processor) Handler(reciver network.IAgent, data []byte, clientData inte
 	}
 
 	msgName := string(data[2 : nameLen+2])
+	//log.Dev("Recv Msg: %s", msgName)
 	i, ok := p.msgInfo[msgName]
 	if !ok {
 		s := fmt.Sprintf("message %s not registered", msgName)
 		log.Fatal(s)
+		log.Debug("%v", p.msgInfo)
 		return false, errors.New(s)
 	}
 	if i.msgHandler == nil {

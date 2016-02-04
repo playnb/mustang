@@ -1,8 +1,8 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
 	"github.com/golang/protobuf/proto"
+	"github.com/playnb/mustang/log"
 	//	"reflect"
 )
 

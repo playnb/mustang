@@ -1,9 +1,9 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
 	"encoding/binary"
 	"errors"
+	"github.com/playnb/mustang/log"
 	"io"
 	"math"
 	"net"

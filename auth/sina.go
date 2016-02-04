@@ -10,36 +10,36 @@ var sina *AuthService
 
 func SinaOAuth2(accid uint64, cb AuthCallBackFunc) (string, error) {
 	if sina == nil {
-		sina = initAuthService(new(sinaAuthSupply))
+		sina = InitAuthService(new(sinaAuthSupply), default_http_service)
 	}
-	return doOAuth2(sina, accid, cb)
+	return DoOAuth2(sina, accid, cb)
 }
 
 type sinaAuthSupply struct {
 }
 
-func (s *sinaAuthSupply) getClientID() string {
+func (s *sinaAuthSupply) GetClientID() string {
 	return "3200218128"
 }
-func (s *sinaAuthSupply) getClientSecret() string {
+func (s *sinaAuthSupply) GetClientSecret() string {
 	return "ccef2a382ad2a99878ee47aaefd2bec0"
 }
-func (s *sinaAuthSupply) getProfileInfoURL(token *oauth2.Token) string {
+func (s *sinaAuthSupply) GetProfileInfoURL(token *oauth2.Token) string {
 	return "https://api.weibo.com/2/users/show.json" + "?" + "access_token=" + token.AccessToken + "&" + "uid=" + token.Extra("uid").(string)
 }
-func (s *sinaAuthSupply) getEndPoint() oauth2.Endpoint {
+func (s *sinaAuthSupply) GetEndPoint() oauth2.Endpoint {
 	return oauth2.Endpoint{
 		AuthURL:  "https://api.weibo.com/oauth2/authorize",
 		TokenURL: "https://api.weibo.com/oauth2/access_token",
 	}
 }
-func (s *sinaAuthSupply) getRedirectURL() string {
+func (s *sinaAuthSupply) GetRedirectURL() string {
 	return "/sina/authcallback"
 }
-func (s *sinaAuthSupply) getName() string {
+func (s *sinaAuthSupply) GetName() string {
 	return "新浪OAuth2接口"
 }
-func (s *sinaAuthSupply) parseAuthUserData(data *AuthUserData, body []byte) error {
+func (s *sinaAuthSupply) ParseAuthUserData(data *AuthUserData, body []byte) error {
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal(body, &jsonData); err == nil {
 		//参考: http://open.weibo.com/wiki/2/users/show

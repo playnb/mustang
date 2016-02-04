@@ -31,6 +31,8 @@ type Logger struct {
 	baseFile   *os.File
 }
 
+var gLogger *Logger
+
 func New(strLevel string, pathname string) (*Logger, error) {
 	// level
 	var level int
@@ -63,6 +65,7 @@ func New(strLevel string, pathname string) (*Logger, error) {
 
 		file, err := os.Create(path.Join(pathname, filename))
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
@@ -121,33 +124,4 @@ func (logger *Logger) Error(format string, a ...interface{}) {
 
 func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(fatalLevel, printFatalLevel, format, a...)
-}
-
-var gLogger, _ = New("debug", "")
-
-// It's dangerous to call the method on logging
-func Export(logger *Logger) {
-	if logger != nil {
-		gLogger = logger
-	}
-}
-
-func Debug(format string, a ...interface{}) {
-	gLogger.Debug(format, a...)
-}
-
-func Trace(format string, a ...interface{}) {
-	gLogger.Trace(format, a...)
-}
-
-func Error(format string, a ...interface{}) {
-	gLogger.Error(format, a...)
-}
-
-func Fatal(format string, a ...interface{}) {
-	gLogger.Fatal(format, a...)
-}
-
-func Close() {
-	gLogger.Close()
 }

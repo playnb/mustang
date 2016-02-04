@@ -1,8 +1,9 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
 	"github.com/gorilla/websocket"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/utils"
 	"net"
 	"net/http"
 	"sync"
@@ -22,6 +23,8 @@ type WSHandler struct {
 //实现net.http.handler接口
 //每次HTTP请求的时候被调用,用于产生链接
 func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer utils.PrintPanicStack()
+	log.Trace("new connect from %s(url:%s)", r.RemoteAddr, r.RequestURI)
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
 		return
@@ -33,7 +36,6 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Trace("new connect from %s(url:%s)", r.RemoteAddr, r.RequestURI)
 	handler.wg.Add(1)
 	defer handler.wg.Done()
 

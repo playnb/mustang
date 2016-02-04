@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"github.com/playnb/mustang/log"
 	"errors"
 	"fmt"
+	"github.com/playnb/mustang/log"
 	"net"
 	"os"
 	"sync"
@@ -11,7 +11,6 @@ import (
 )
 
 //全局唯一ID发生器
-
 var generators map[uint64]*IdGenerator = make(map[uint64]*IdGenerator)
 
 //获取snowflake的ID

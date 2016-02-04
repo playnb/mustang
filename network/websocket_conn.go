@@ -1,8 +1,8 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
 	"github.com/gorilla/websocket"
+	"github.com/playnb/mustang/log"
 	"net"
 	"sync"
 )
@@ -30,6 +30,7 @@ func newWSConn(conn *websocket.Conn, pendingWriteNum int) *WSConn {
 
 			err := conn.WriteMessage(websocket.BinaryMessage, b)
 			if err != nil {
+				log.Error(err.Error())
 				break
 			}
 		}

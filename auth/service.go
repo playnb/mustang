@@ -33,16 +33,16 @@ type AuthService struct {
 }
 
 type IAuthSupply interface {
-	getRedirectURL() string
-	getName() string
-	getClientID() string
-	getClientSecret() string
-	getEndPoint() oauth2.Endpoint
-	getProfileInfoURL(token *oauth2.Token) string
-	parseAuthUserData(data *AuthUserData, body []byte) error
+	GetRedirectURL() string
+	GetName() string
+	GetClientID() string
+	GetClientSecret() string
+	GetEndPoint() oauth2.Endpoint
+	GetProfileInfoURL(token *oauth2.Token) string
+	ParseAuthUserData(data *AuthUserData, body []byte) error
 }
 
-func doOAuth2(service *AuthService, accid uint64, cb AuthCallBackFunc) (string, error) {
+func DoOAuth2(service *AuthService, accid uint64, cb AuthCallBackFunc) (string, error) {
 	if service == nil {
 		err := errors.New("SinaOAuth2没有初始化")
 		cb(nil, accid, err)
@@ -58,28 +58,29 @@ func doOAuth2(service *AuthService, accid uint64, cb AuthCallBackFunc) (string, 
 	return service.oauthCfg.AuthCodeURL(strconv.FormatUint(accid, 10)), nil
 }
 
-func initAuthService(supply IAuthSupply) *AuthService {
-	if (http_service==nil){
+func InitAuthService(supply IAuthSupply, http_service *AuthHttpService) *AuthService {
+	if http_service == nil {
 		log.Error("AuthHttpService没有初始化, 调用InitAuthHttpService函数初始化")
 		return nil
-	}else{
+	} else {
 		service := new(AuthService)
 		service = new(AuthService)
 		service.callback = make(map[uint64]AuthCallBackFunc)
 		service.oauthCfg = &oauth2.Config{
-			ClientID:     supply.getClientID(),
-			ClientSecret: supply.getClientSecret(),
-			Endpoint:     supply.getEndPoint(),
-			RedirectURL:  AuthServiceUrl + supply.getRedirectURL(),
+			ClientID:     supply.GetClientID(),
+			ClientSecret: supply.GetClientSecret(),
+			Endpoint:     supply.GetEndPoint(),
+			RedirectURL:  AuthServiceUrl + supply.GetRedirectURL(),
 			Scopes:       nil,
 		}
 
-		http_service.mux.HandleFunc(supply.getRedirectURL(), func(w http.ResponseWriter, r *http.Request) {
+		http_service.mux.HandleFunc(supply.GetRedirectURL(), func(w http.ResponseWriter, r *http.Request) {
 			data := new(AuthUserData)
 			data.Response = w
 			data.Request = r
+			data.ServiceName = "sina"
 
-			log.Trace("OAuth2接口授权返回: "+ r.RequestURI+ "来自" +r.RemoteAddr)
+			log.Trace("OAuth2接口授权返回: " + r.RequestURI + "来自" + r.RemoteAddr)
 			code := r.FormValue("code")
 			state, err := strconv.ParseInt(r.FormValue("state"), 10, 64)
 			if err != nil {
@@ -106,7 +107,7 @@ func initAuthService(supply IAuthSupply) *AuthService {
 				log.Error(err.Error())
 				cb(nil, accid, err)
 			} else {
-				req, err := service.oauthCfg.Client(ctx, token).Get(supply.getProfileInfoURL(token))
+				req, err := service.oauthCfg.Client(ctx, token).Get(supply.GetProfileInfoURL(token))
 				if err != nil {
 					log.Error("OAuth2接口获取用户信息错误:%s accid:%d", err.Error(), accid)
 					cb(nil, accid, err)
@@ -116,7 +117,7 @@ func initAuthService(supply IAuthSupply) *AuthService {
 					data.AcessToken = token.AccessToken
 					data.Raw = string(body)
 
-					if err := supply.parseAuthUserData(data, body); err == nil {
+					if err := supply.ParseAuthUserData(data, body); err == nil {
 						cb(data, accid, nil)
 					} else {
 						cb(nil, accid, err)
