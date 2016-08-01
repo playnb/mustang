@@ -7,8 +7,6 @@ import (
 	"reflect"
 )
 
-type HandlerMessageFunc func(reciver IAgent, data []byte, clientData interface{}) (bool, error)
-
 type WSAgent struct {
 	name              string
 	conn              *WSConn
@@ -98,7 +96,12 @@ func (a *WSAgent) WriteMsg(msg interface{}) {
 		}
 		a.conn.WriteMsg(data)
 	} else {
-		a.Error("发送消息没有合适的处理器")
+		data := msg.([]byte)
+		if data != nil {
+			a.conn.WriteMsg(data)
+		} else {
+			a.Error("发送消息没有合适的处理器")
+		}
 	}
 }
 

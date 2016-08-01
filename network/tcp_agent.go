@@ -10,6 +10,8 @@ type TCPAgent struct {
 	name              string
 	conn              *TCPConn
 	protobufProcessor IProtobufProcessor
+	handlerMessage    HandlerMessageFunc
+	CloseFunc         func()
 	userData          interface{}
 }
 
@@ -23,7 +25,14 @@ func (a *TCPAgent) Run() {
 			break
 		}
 
-		if a.protobufProcessor != nil {
+		if a.handlerMessage != nil {
+			_, err = a.handlerMessage(a, data, a.UserData)
+			if err != nil {
+				a.Debug("[handlerMessage]protobuf handle msg error %v", err)
+				//WHY: 解析错误需要跳出循环吗?
+				//break
+			}
+		} else if a.protobufProcessor != nil {
 			_, err := a.protobufProcessor.Handler(a, data, nil)
 			if err != nil {
 				a.Error("Client handler error: %v", err)
@@ -41,12 +50,22 @@ func (a *TCPAgent) WriteMsg(msg interface{}) {
 			return
 		}
 		a.conn.WriteMsg(data)
+	} else {
+		data := msg.([]byte)
+		if data != nil {
+			a.conn.WriteMsg(data)
+		} else {
+			a.Error("发送消息没有合适的处理器")
+		}
 	}
 }
 
 //关闭时调用
 func (a *TCPAgent) OnClose() {
 	log.Trace("TCPClientAgent exit")
+	if a.CloseFunc != nil {
+		a.CloseFunc()
+	}
 }
 
 func (a *TCPAgent) description() string {
@@ -83,6 +102,10 @@ func (a *TCPAgent) ProtobufProcessor() IProtobufProcessor {
 
 func (a *TCPAgent) SetProtobufProcessor(processor IProtobufProcessor) {
 	a.protobufProcessor = processor
+}
+
+func (a *TCPAgent) SetHandlerMessageFunc(handlerMessage HandlerMessageFunc) {
+	a.handlerMessage = handlerMessage
 }
 
 func (a *TCPAgent) SetConn(conn *TCPConn) {

@@ -11,6 +11,7 @@ import (
 //message 消息数据
 //data 附加数据(data[0]原始消息数据 data[1]userData)
 type MsgHandler func(agent IAgent, msgType reflect.Type, message interface{}, data []interface{})
+type HandlerMessageFunc func(reciver IAgent, data []byte, clientData interface{}) (bool, error)
 
 //protobuf消息处理器
 type IProtobufProcessor interface {
