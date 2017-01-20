@@ -3,9 +3,10 @@ package global
 import (
 	"flag"
 	"fmt"
+	"strconv"
+
 	"github.com/playnb/mustang/log"
 	"github.com/playnb/mustang/utils"
-	"strconv"
 )
 
 //取得钻石配置
@@ -25,9 +26,9 @@ func (a *AchievementType) GetDiamonds() uint32 {
 
 //商店商品配置
 type ShopItemType struct {
-	Character     string `json:"character"`
-	Diamonds string `json:"diamonds"`
-	Level    string `json:"level"`
+	Character string `json:"character"`
+	Diamonds  string `json:"diamonds"`
+	Level     string `json:"level"`
 }
 
 func (s *ShopItemType) GetLevel() uint32 {
@@ -71,7 +72,7 @@ var C = &Config{}
 var Release = false
 
 func LoadConfig() {
-	config_file := flag.String("config", "", "Use -config <filesource>")
+	config_file := flag.String("config", "release_config.json", "Use -config <filesource>")
 	config_url := flag.String("config_url", "", "Use -config_url <filesource>")
 
 	flag.Parse()

@@ -2,13 +2,15 @@ package sqldb
 
 import (
 	"fmt"
+
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/playnb/mustang/global"
 )
 
 func init() {
-	orm.RegisterDriver("mysql", orm.DR_MySQL)
+
+	orm.RegisterDriver("mysql", orm.DRMySQL)
 	err := orm.RegisterDataBase("default", "mysql", global.C.MySqlUrl)
 	if err != nil {
 		fmt.Println(err)
