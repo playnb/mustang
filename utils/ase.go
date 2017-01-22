@@ -10,6 +10,7 @@ import (
 	"crypto/cipher"
 	//"encoding/base64"
 	"encoding/hex"
+	"errors"
 )
 
 var aesKey = []byte("sfe023f_9fd&fwfl")
@@ -69,6 +70,10 @@ func AesDecrypt(crypted, key []byte) ([]byte, error) {
 		return nil, err
 	}
 	blockSize := block.BlockSize()
+	slot := len(crypted) % blockSize;
+	if (slot!=0){
+		return nil, errors.New("crypto/cipher: input not full blocks")
+	}
 	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
 	origData := make([]byte, len(crypted))
 	blockMode.CryptBlocks(origData, crypted)
