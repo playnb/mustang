@@ -1,84 +1,68 @@
+/*
+给log做一层封装
+以后用什么log库再说
+*/
+
 package log
 
+/*
 import (
+	"flag"
 	"fmt"
-	"runtime"
-	log "github.com/cihub/seelog"
+
+	"github.com/golang/glog"
 )
 
+var DevLog = false
+var Release = false
+var panic_dir string
+var log_dir string
+
 func init() {
-	//gLogger, _ = New("debug", "")
-	logger, err := log.LoggerFromConfigAsFile("seelog.xml")
-	if err != nil {
-		fmt.Println("没有配置文件,使用默认值", err)
-		switch os := runtime.GOOS; os {
-			case "linux":
-				log.LoggerFromConfigAsString(`
-<seelog>
-	<outputs formatid="main">
-		<console/>
-		<buffered size="10000" flushperiod="100">
-			<rollingfile formatid="main"  type="date" filename="c:/log/app.log" datepattern="2006.01.02" maxrolls="360"/>
-		</buffered>
-	</outputs>
-	<formats>
-        <format id="main" format="%Date/%Time [%LEV] %Msg%n"/>
-    </formats>
-</seelog>
-				`)
-			case "windows":
-				log.LoggerFromConfigAsString(`
-<seelog>
-	<outputs formatid="main">
-		<console/>
-		<buffered size="10000" flushperiod="100">
-			<rollingfile formatid="main"  type="date" filename="/log/app.log" datepattern="2006.01.02" maxrolls="360"/>
-		</buffered>
-	</outputs>
-	<formats>
-        <format id="main" format="%Date/%Time [%LEV] %Msg%n"/>
-    </formats>
-</seelog>
-				`)
-			default:
-				fmt.Println("err parsing config log file", err)
-		}
-		return
-	}
-	log.ReplaceLogger(logger)
+	flag.StringVar(&panic_dir, "panic_dir", `C:\code\server\panic`, "日志位置")
+
+	flag.Set("alsologtostderr", "true")
+	flag.Set("log_dir", `C:\code\server\log`)
+	flag.Set("panic_dir", `C:\code\server\panic`)
+	flag.Set("v", "3")
 }
 
-var Release = false
+func Init() {
+	fmt.Println("Log Init")
+}
 
 func Dev(format string, a ...interface{}) {
-	if Release {
-		return
+	if DevLog {
+		glog.Infof(format, a...)
 	}
-	//gLogger.Debug(format, a...)
-	log.Infof(format, a...)
 }
 
 func Debug(format string, a ...interface{}) {
-	//gLogger.Debug(format, a...)
-	log.Debugf(format, a...)
+	glog.Infof(format, a...)
+}
+
+func Info(format string, a ...interface{}) {
+	glog.Infof(format, a...)
 }
 
 func Trace(format string, a ...interface{}) {
-	//gLogger.Trace(format, a...)
-	log.Tracef(format, a...)
+	glog.Infof(format, a...)
+}
+
+func Warning(format string, a ...interface{}) {
+	glog.Warningf(format, a...)
 }
 
 func Error(format string, a ...interface{}) {
-	//gLogger.Error(format, a...)
-	log.Errorf(format, a...)
+	glog.Errorf(format, a...)
 }
 
 func Fatal(format string, a ...interface{}) {
-	//gLogger.Fatal(format, a...)
-	log.Criticalf(format, a...)
+	glog.Fatalf(format, a...)
 }
 
-func Close() {
+func Flush() {
 	//gLogger.Close()
-	log.Flush()
+	glog.Flush()
 }
+*/

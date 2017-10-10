@@ -1,155 +1,124 @@
 package network
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/playnb/mustang/log"
-	"github.com/playnb/mustang/utils"
+	"errors"
 	"reflect"
+
+	"github.com/gogo/protobuf/proto"
 )
 
+//WSAgent websocket的agent
 type WSAgent struct {
-	name              string
-	conn              *WSConn
-	protobufProcessor IProtobufProcessor
-	handlerMessage    HandlerMessageFunc
-	innerMsgChan      chan []byte
-	UserData          interface{}
-	CloseFunc         func()
-	needClose         chan bool
+	name           string
+	conn           *WSConn
+	msgProcessor   IMsgProcessor
+	handlerMessage HandlerMessageFunc
+	innerMsgChan   chan []byte
+	agentMsgChan   chan *AgentMessage
+	msgChan        chan []byte
+	UserData       interface{}
+	needClose      chan bool
 }
 
-func (a *WSAgent) DoInnerMsg(data []byte) {
-	a.innerMsgChan <- data
+func (a *WSAgent) String() string {
+	return "[" + a.name + "] "
 }
 
-func (a *WSAgent) Run() {
+//Close 主动关闭 WSAgent
+func (a *WSAgent) Close() {
+	log.Debug("%s 主动关闭 WSAgent", a)
+	a.conn.Close()
+}
 
-	a.Trace("run...")
-	msgChan := make(chan []byte, 1024)
-	a.innerMsgChan = make(chan []byte, 1024)
+//WriteMsg 发送数据
+func (a *WSAgent) WriteMsg(msg interface{}) error {
+	if a.msgProcessor != nil {
+		// protobuf
+		data, err := a.msgProcessor.PackMsg(msg.(proto.Message))
+		if err != nil {
+			log.Error("%s marshal protobuf %v error: %v", a, reflect.TypeOf(msg), err)
+			return errors.New("marshal protobuf error")
+		}
+		return a.conn.WriteMsg(data)
+	}
+	data := msg.([]byte)
+	if data != nil {
+		return a.conn.WriteMsg(data)
+	}
+	log.Error("%s 发送消息没有合适的处理器", a)
+	return errors.New("发送消息没有合适的处理器")
+}
+
+func (a *WSAgent) WriteMsgWithoutPack(data []byte) error {
+	return a.conn.WriteMsg(data)
+}
+
+//Run 运行Agent
+func (a *WSAgent) Run(agent IAgent) {
 	a.needClose = make(chan bool)
+	a.msgChan = make(chan []byte, 1024)
+	a.agentMsgChan = make(chan *AgentMessage, 100)
 
 	go func() {
-		defer utils.PrintPanicStack()
+		defer log.PrintPanicStack()
 		for {
 			if a.conn == nil {
-				a.Error("WSAgent 连接为nil")
-				a.needClose <- true
+				log.Error("%s WSAgent 连接为nil", a)
+				close(a.needClose)
 				return
 			}
 			data, err := a.conn.ReadMsg()
 			if err != nil {
-				a.Debug("读取消息错误: %v", err)
-				a.needClose <- true
+				log.Debug("%s  读取消息错误: %v", a, err)
+				close(a.needClose)
 				return
 			}
 
-			msgChan <- data
+			a.msgChan <- data
 		}
 	}()
 
 	for {
-		var data []byte
-		var err error
 		select {
-		case data = <-msgChan:
-		case data = <-a.innerMsgChan:
-		case <-a.needClose:
-			{
-				log.Error("WSAgent 发生错误")
-				a.Close()
-				return
+		case data := <-a.msgChan:
+			if a.msgProcessor != nil {
+				_, err := a.msgProcessor.Handler(agent, data, a.UserData)
+				if err != nil {
+					log.Error("[protobufProcessor] %s protobuf handle msg error %v", a, err)
+				}
+			} else {
+
 			}
-		}
-		if a.handlerMessage != nil {
-			_, err = a.handlerMessage(a, data, a.UserData)
-			if err != nil {
-				a.Debug("[handlerMessage]protobuf handle msg error %v", err)
-				//WHY: 解析错误需要跳出循环吗?
-				//break
-			}
-		} else if a.protobufProcessor != nil {
-			_, err = a.protobufProcessor.Handler(a, data, a.UserData)
-			if err != nil {
-				a.Debug("[protobufProcessor]protobuf handle msg error %v", err)
-				//WHY: 解析错误需要跳出循环吗?
-				//break
+		case ok, _ := <-a.needClose:
+			if ok == false {
+				///要退出了
 			}
 		}
 	}
 }
 
-func (a *WSAgent) OnClose() {
-	log.Trace("WSAgent 退出")
-	if a.CloseFunc != nil {
-		a.CloseFunc()
+//Call 异步调用方法
+func (a *WSAgent) Call(name string, in interface{}) interface{} {
+	agm := &AgentMessage{
+		MsgName: name,
+		InData:  in,
+		OutChan: make(chan interface{}),
 	}
+	a.agentMsgChan <- agm
+	return <-agm.OutChan
 }
 
-func (a *WSAgent) WriteMsg(msg interface{}) {
-	if a.protobufProcessor != nil {
-		// protobuf
-		data, err := a.protobufProcessor.PackMsg(msg.(proto.Message))
-		if err != nil {
-			a.Error("marshal protobuf %v error: %v", reflect.TypeOf(msg), err)
-			return
-		}
-		a.conn.WriteMsg(data)
-	} else {
-		data := msg.([]byte)
-		if data != nil {
-			a.conn.WriteMsg(data)
-		} else {
-			a.Error("发送消息没有合适的处理器")
-		}
-	}
+func (a *WSAgent) GetDebug() bool {
+	return false
+}
+func (a *WSAgent) SetDebug(bool) {
 }
 
-func (a *WSAgent) Close() {
-	log.Debug("主动关闭 WSAgent")
-	a.conn.Close()
+func (a *WSAgent) Name() string {
+	return a.String()
 }
 
-func (a *WSAgent) description() string {
-	return "[" + a.name + "] "
-}
+func (a *WSAgent) SetConn(conn interface{}) {
 
-func (a *WSAgent) Debug(format string, d ...interface{}) {
-	log.Debug(a.description()+format, d...)
-}
-
-func (a *WSAgent) Trace(format string, d ...interface{}) {
-	log.Trace(a.description()+format, d...)
-}
-
-func (a *WSAgent) Error(format string, d ...interface{}) {
-	log.Error(a.description()+format, d...)
-}
-
-func (a *WSAgent) Fatal(format string, d ...interface{}) {
-	log.Fatal(a.description()+format, d...)
-}
-
-func (a *WSAgent) ProtobufProcessor() IProtobufProcessor {
-	return a.protobufProcessor
-}
-
-func (a *WSAgent) SetProtobufProcessor(processor IProtobufProcessor) {
-	a.protobufProcessor = processor
-}
-
-func (a *WSAgent) SetHandlerMessageFunc(handlerMessage HandlerMessageFunc) {
-	a.handlerMessage = handlerMessage
-}
-
-func (a *WSAgent) SetConn(conn *WSConn) {
-	a.conn = conn
-}
-
-func (a *WSAgent) Name() interface{} {
-	return a.name
-}
-
-func (a *WSAgent) SetName(name string) {
-	a.name = name
 }

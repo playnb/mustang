@@ -1,11 +1,14 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
 	"net"
 	"sync"
+
+	"github.com/playnb/mustang/log"
+	"fmt"
 )
 
+//TCPServer TCP服务器
 type TCPServer struct {
 	Addr            string
 	MaxConnNum      int
@@ -21,19 +24,24 @@ type TCPServer struct {
 	msgParser *MsgParser
 }
 
+//Start 启动
 func (server *TCPServer) Start() {
 	server.init()
 	go server.run()
 }
 
+func (server *TCPServer) String() string {
+	return fmt.Sprintf("TCPServer")
+}
+
 //检查参数合法性
-func (server *TCPServer) check_valid() {
+func (server *TCPServer) checkValid() {
 	if server.MaxConnNum <= 0 {
 		server.MaxConnNum = 100
 		log.Trace("invalid MaxConnNum, reset to %v", server.MaxConnNum)
 	}
 	if server.PendingWriteNum <= 0 {
-		server.PendingWriteNum = 100
+		server.PendingWriteNum = 2
 		log.Trace("invalid PendingWriteNum, reset to %v", server.PendingWriteNum)
 	}
 	if server.NewAgent == nil {
@@ -42,12 +50,14 @@ func (server *TCPServer) check_valid() {
 }
 
 func (server *TCPServer) init() {
+	server.checkValid()
+
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		log.Fatal("%v", err)
+	} else {
+		log.Info("绑定服务器端口成功 @%s", server.Addr)
 	}
-
-	server.check_valid()
 
 	server.ln = ln
 	server.conns = make(ConnSet)
@@ -61,11 +71,11 @@ func (server *TCPServer) run() {
 		conn, err := server.ln.Accept()
 		if err != nil {
 			if server.closeFlag {
+				log.Error("%s 已经关闭 Accept Error: %v", server, err)
 				return
-			} else {
-				log.Error("accept error: %v", err)
-				continue
 			}
+			log.Error("%s Accept Error: %v", server, err)
+			continue
 		}
 
 		//加入连接集合
@@ -73,7 +83,7 @@ func (server *TCPServer) run() {
 		if len(server.conns) >= server.MaxConnNum {
 			server.mutexConns.Unlock()
 			conn.Close()
-			log.Debug("too many connections")
+			log.Warning("%s: too many connections ...", server)
 			continue
 		}
 		server.conns[conn] = struct{}{}
@@ -82,20 +92,20 @@ func (server *TCPServer) run() {
 		server.wg.Add(1)
 
 		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.msgParser)
-		agent := server.NewAgent(tcpConn)
-		go func() {
-			agent.Run()
+		tcpConn.SetAgentObj(server.NewAgent(tcpConn), server)
 
-			//从连接集合中删除
-			tcpConn.Close()
-			server.mutexConns.Lock()
-			delete(server.conns, conn)
-			server.mutexConns.Unlock()
-			agent.OnClose()
-
-			server.wg.Done()
-		}()
+		go tcpConn.SendLoop()
+		go tcpConn.RecvLoop()
 	}
+}
+
+//OnTCPConnClose TCPConn关闭时候的回调(在TcpConn.RecvLoop线程中调用)
+func (server *TCPServer) OnTCPConnClose(tcpConn *TCPConn) {
+	server.mutexConns.Lock()
+	delete(server.conns, tcpConn.conn)
+	server.mutexConns.Unlock()
+
+	server.wg.Done()
 }
 
 func (server *TCPServer) Close() {
