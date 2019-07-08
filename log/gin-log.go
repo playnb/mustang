@@ -19,7 +19,6 @@ func GinLogger() gin.HandlerFunc {
 		// Log only when path is not being skipped
 		param := gin.LogFormatterParams{
 			Request: c.Request,
-			IsTerm:  false,
 		}
 
 		// Stop timer
