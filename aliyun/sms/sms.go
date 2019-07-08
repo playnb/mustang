@@ -1,7 +1,7 @@
 package sms
 
 import (
-	"github.com/playnb/mustang/aliyun/common"
+	"cell/common/mustang/aliyun/common"
 	"net/http"
 )
 

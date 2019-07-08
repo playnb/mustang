@@ -1,7 +1,7 @@
 package signals
 
 import (
-	"github.com/playnb/mustang/log"
+	"cell/common/mustang/log"
 	"container/list"
 	"os"
 	"os/signal"
@@ -36,6 +36,10 @@ type signalObj struct {
 }
 
 var exit_chan chan bool = make(chan bool, 1)
+
+func ExitChan() chan bool {
+	return exit_chan
+}
 
 //启动监听
 func Start() chan bool {
@@ -95,7 +99,7 @@ func notify(sig os.Signal) bool {
 	if sig_type == EXIT {
 		log.Info("[退出] 收到退出指令")
 		time.Sleep(time.Second * 1)
-		exit_chan <- true
+		close(exit_chan)
 		return false
 	}
 	return false

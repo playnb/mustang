@@ -1,89 +1,60 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
-	"errors"
-	"net"
-	"sync"
-
+	"cell/common/mustang/util"
+	"fmt"
 	"github.com/gorilla/websocket"
+	"net"
+	"time"
 )
 
 type websocketConnSet map[*websocket.Conn]struct{}
 
 //WSConn websocket链接对象
 type WSConn struct {
-	sync.Mutex
-	conn      *websocket.Conn
-	writeChan chan []byte
-	closeFlag bool
+	conn *websocket.Conn
+
+	ImplConn
 }
 
 func newWSConn(conn *websocket.Conn, pendingWriteNum int) *WSConn {
 	wsConn := new(WSConn)
 	wsConn.conn = conn
+	wsConn.Init(wsConn, pendingWriteNum)
 	wsConn.writeChan = make(chan []byte, pendingWriteNum)
-
-	go func() {
-		for b := range wsConn.writeChan {
-			if b == nil {
-				break
-			}
-
-			err := wsConn.conn.WriteMessage(websocket.BinaryMessage, b)
-			if err != nil {
-				log.Error(err.Error())
-				break
-			}
-		}
-
-		conn.Close()
-		wsConn.Lock()
-		wsConn.closeFlag = true
-		wsConn.Unlock()
-	}()
-
 	return wsConn
 }
 
-func (wsConn *WSConn) onDestroy() {
-	wsConn.conn.Close()
-	close(wsConn.writeChan)
-	wsConn.closeFlag = true
+func (wsConn *WSConn) String() string {
+	return fmt.Sprintf("[Conn:%s]", wsConn.ImplConn.String())
 }
 
-//Close 关闭WebSocket
-func (wsConn *WSConn) Close() {
-	wsConn.Lock()
-	defer wsConn.Unlock()
-	if wsConn.closeFlag {
-		return
-	}
-	wsConn.onDestroy()
+//CloseSession 关闭WebSocket
+func (wsConn *WSConn) Close() error {
+	return wsConn.conn.Close()
 }
 
 //WriteMsg 发送数据
-func (wsConn *WSConn) WriteMsg(b []byte) error {
-	wsConn.Lock()
-	defer wsConn.Unlock()
-	if wsConn.closeFlag {
-		log.Trace("%s 向关闭的WebSocket写数据")
-		return errors.New("向关闭的WebSocket写数据")
-	}
-	/*
-		if len(wsConn.writeChan) == cap(wsConn.writeChan) {
-			log.Debug("close conn: channel full")
-			return
-		}
-	*/
-	wsConn.writeChan <- b
+func (wsConn *WSConn) WriteMsg(b *util.BuffData) error {
+	wsConn.Write(b.GetPayload())
 	return nil
 }
 
+func (wsConn *WSConn) write(b []byte, deadTime time.Time) (n int, err error) {
+	if !deadTime.Equal(time.Unix(0, 0)) {
+		wsConn.conn.SetWriteDeadline(deadTime)
+	}
+	err = wsConn.conn.WriteMessage(websocket.BinaryMessage, b)
+	if err != nil {
+		return 0, err
+	}
+	return len(b), nil
+}
+
 //ReadMsg 读取数据
-func (wsConn *WSConn) ReadMsg() ([]byte, error) {
+func (wsConn *WSConn) ReadMsg() (*util.BuffData, error) {
 	_, msg, err := wsConn.conn.ReadMessage()
-	return msg, err
+	return util.MakeBuffDataBySlice(msg, 0), err
 }
 
 //LocalAddr 本地地址

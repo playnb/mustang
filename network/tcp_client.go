@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/playnb/mustang/log"
+	"cell/common/mustang/log"
 )
 
 //TCPClient Tcp客户端
@@ -23,7 +23,7 @@ type TCPClient struct {
 	name             string
 
 	// msg parser
-	msgParser *MsgParser
+	PacketParser *MsgParser
 }
 
 //Start 启动
@@ -49,7 +49,9 @@ func (client *TCPClient) checkValid() {
 func (client *TCPClient) init() {
 	client.checkValid()
 	client.closeFlag = false
-	client.msgParser = NewMsgParser()
+	if client.PacketParser == nil {
+		client.PacketParser = NewMsgParser()
+	}
 }
 
 //创建net.Conn连接
@@ -90,7 +92,7 @@ func (client *TCPClient) connect() {
 	}
 	log.Trace("[%s] 创建连接成功  %v", client, client.Addr)
 
-	client.tcpConn = newTCPConn(conn, client.PendingWriteNum, client.msgParser)
+	client.tcpConn = newTCPConn(conn, client.PendingWriteNum, client.PacketParser)
 	client.agent = client.NewAgent(client.tcpConn)
 	client.tcpConn.SetAgentObj(client.agent, client)
 
@@ -115,7 +117,7 @@ func (client *TCPClient) Close() {
 	}
 }
 
-func (client *TCPClient) WriteMsg(msg interface{}) {
+func (client *TCPClient) WriteMsg(msg MarshalToProto) {
 	if client.agent != nil {
 		client.agent.WriteMsg(msg)
 	}

@@ -1,7 +1,6 @@
 package network
 
 import (
-
 	//	"encoding/binary"
 	//	"errors"
 	//	"io"
@@ -9,9 +8,11 @@ import (
 	"errors"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/playnb/mustang/log"
+	"cell/common/mustang/log"
+	"cell/common/mustang/util"
 	"fmt"
 )
 
@@ -27,7 +28,7 @@ type ITcpConnOwner interface {
 type TCPConn struct {
 	connMutex  sync.Mutex
 	conn       net.Conn
-	writeChan  chan []byte
+	writeChan  chan *util.BuffData
 	closeFlag  bool //关闭标识
 	msgParser  *MsgParser
 	sequenceID uint64
@@ -35,19 +36,19 @@ type TCPConn struct {
 	agent IAgent
 	owner ITcpConnOwner
 
-	exitChan chan bool
+	exitChan       chan bool
+	canDropMessage bool
 }
 
 //创建TCP连接
 func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser *MsgParser) *TCPConn {
-	sequenceTCPConnID++
 	tcpConn := new(TCPConn)
 	tcpConn.conn = conn
 	tcpConn.closeFlag = false
-	tcpConn.writeChan = make(chan []byte, pendingWriteNum)
+	tcpConn.writeChan = make(chan *util.BuffData, pendingWriteNum)
 	tcpConn.exitChan = make(chan bool, 1)
 	tcpConn.msgParser = msgParser
-	tcpConn.sequenceID = sequenceTCPConnID
+	tcpConn.sequenceID = atomic.AddUint64(&sequenceTCPConnID, 1)
 
 	return tcpConn
 }
@@ -64,11 +65,27 @@ func (tcpConn *TCPConn) SetAgentObj(agent IAgent, owner ITcpConnOwner) {
 	tcpConn.agent.ConnectFunc()
 }
 
+func (tcpConn *TCPConn) SetCloseFlag() {
+}
+func (tcpConn *TCPConn) GetExitChan() chan bool {
+	return nil
+}
+func (tcpConn *TCPConn) GetCloseFlag() bool {
+	return false
+}
+func (tcpConn *TCPConn) Close() error {
+	return nil
+}
+func (tcpConn *TCPConn) write(b []byte, deadTime time.Time) (n int, err error) {
+	return n, nil
+}
+
 //SendLoop 每个链接都有一个goroutine处理发送消息
 func (tcpConn *TCPConn) SendLoop() {
 	log.Debug("[%s] 开始发送数据goroutine", tcpConn)
 	needBreak := false
 	for !needBreak {
+		//__ft2 := util.NewFunctionTime("SendLoop", 100)
 		select {
 		case b, ok := <-tcpConn.writeChan:
 			if ok == false {
@@ -89,10 +106,13 @@ func (tcpConn *TCPConn) SendLoop() {
 				break
 			}
 
-			tcpConn.conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
-			_, err := tcpConn.conn.Write(b)
+			tcpConn.conn.SetWriteDeadline(time.Now().Add(time.Second * 5))
+			len, err := tcpConn.conn.Write(b.GetPayload())
+			b.Release()
+			if len > 0 {
+			}
 			//if tcpConn.agent != nil && tcpConn.agent.GetDebug() {
-			//	log.Debug("[%s] TCPConn: 数据确实发送 %d", tcpConn, len)
+			//log.Ltp("[%s] TCPConn: 数据确实发送 %d", tcpConn, len)
 			//}
 
 			if err != nil {
@@ -105,6 +125,7 @@ func (tcpConn *TCPConn) SendLoop() {
 				break
 			}
 		}
+		//__ft2.End()
 
 		if needBreak == true {
 			break
@@ -145,16 +166,19 @@ func (tcpConn *TCPConn) Terminate() {
 
 //onClose 关闭连接(动作)
 func (tcpConn *TCPConn) onClose() {
-	tcpConn.connMutex.Lock()
-	defer tcpConn.connMutex.Unlock()
+	func() {
+		tcpConn.connMutex.Lock()
+		defer tcpConn.connMutex.Unlock()
 
-	if tcpConn.agent != nil {
-		log.Debug("tcpConn onClose %v", tcpConn.agent)
-	} else {
-		log.Debug("tcpConn onClose")
-	}
-	tcpConn.closeFlag = true
-	close(tcpConn.writeChan)
+		if tcpConn.agent != nil {
+			log.Debug("tcpConn onClose %v", tcpConn.agent)
+		} else {
+			log.Debug("tcpConn onClose")
+		}
+		tcpConn.closeFlag = true
+		close(tcpConn.writeChan)
+	}()
+
 	if tcpConn.agent.CloseFunc != nil {
 		tcpConn.agent.CloseFunc()
 	}
@@ -164,7 +188,7 @@ func (tcpConn *TCPConn) onClose() {
 }
 
 //Write 写入数据
-func (tcpConn *TCPConn) Write(b []byte) {
+func (tcpConn *TCPConn) Write(b *util.BuffData) {
 	tcpConn.connMutex.Lock()
 	defer tcpConn.connMutex.Unlock()
 	if tcpConn.closeFlag == true {
@@ -174,7 +198,18 @@ func (tcpConn *TCPConn) Write(b []byte) {
 	//if tcpConn.agent != nil && tcpConn.agent.GetDebug() {
 	//	log.Debug("[%s] TCPConn:Write 发送数据1 %d (len:%d,cap:%d)", tcpConn, len(b), len(tcpConn.writeChan), cap(tcpConn.writeChan))
 	//}
+
+	msgCount := len(tcpConn.writeChan)
+	if msgCount > cap(tcpConn.writeChan)/2+10 {
+		log.Debug("[%s] TCPConn:Write 有消息累积(%d)", tcpConn, msgCount)
+		if tcpConn.canDropMessage {
+			log.Debug("[%s] TCPConn:Write 抛弃消息(%d)", tcpConn, msgCount)
+			return
+		}
+	}
+	__ft3 := util.NewFunctionTime("on_Write", 1)
 	tcpConn.writeChan <- b
+	__ft3.End()
 	//if tcpConn.agent != nil && tcpConn.agent.GetDebug() {
 	//	log.Debug("[%s] TCPConn:Write 发送数据2", tcpConn)
 	//}
@@ -196,14 +231,39 @@ func (tcpConn *TCPConn) RemoteAddr() net.Addr {
 }
 
 //ReadMsg 读取Msg
-func (tcpConn *TCPConn) ReadMsg() ([]byte, error) {
+func (tcpConn *TCPConn) ReadMsg() (*util.BuffData, error) {
 	return tcpConn.msgParser.Read(tcpConn)
 }
 
 //WriteMsg 写入Msg
-func (tcpConn *TCPConn) WriteMsg(data []byte) error {
+func (tcpConn *TCPConn) WriteMsg(data *util.BuffData) error {
 	if tcpConn.closeFlag {
 		return errors.New("向一个已经关闭的TCPConn写数据 " + tcpConn.String())
 	}
-	return tcpConn.msgParser.Write(tcpConn, data)
+	buf, err := tcpConn.msgParser.Write(tcpConn, data)
+	if err != nil {
+		return err
+	}
+	tcpConn.Write(buf)
+	return nil
+}
+
+func (tcpConn *TCPConn) WriteMsgDirectly(data *util.BuffData) error {
+	if tcpConn.closeFlag {
+		return errors.New("向一个已经关闭的TCPConn写数据 " + tcpConn.String())
+	}
+	buf, err := tcpConn.msgParser.Write(tcpConn, data)
+	if err != nil {
+		return err
+	}
+
+	tcpConn.conn.SetWriteDeadline(time.Now().Add(time.Second * 5))
+	len, err := tcpConn.conn.Write(buf.GetPayload())
+	if len > 0 {
+	}
+	if err != nil {
+		log.Error(tcpConn.String() + "==================> Error:" + err.Error())
+		tcpConn.conn.Close()
+	}
+	return err
 }

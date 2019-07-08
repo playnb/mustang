@@ -13,7 +13,7 @@ func reDirectErr() {
 	if err == nil {
 		os.Stderr = logFile
 		//syscall.Dup2(int(logFile.Fd()), 1)
-		syscall.Dup2(int(logFile.Fd()), 2)
+		syscall.Dup2(int(logFile.Fd()), int(os.Stderr.Fd()))
 	} else {
 		panic("打开错误重定向文件失败")
 	}

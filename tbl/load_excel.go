@@ -1,38 +1,51 @@
 package tbl
 
 import (
-	"github.com/playnb/mustang/log"
+	"cell/common/mustang/log"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tealeg/xlsx"
 )
 
-type interfaceElsxData interface {
+type interfaceXlsxData interface {
 	GetUniqueID() uint64 //计算唯一ID
 	AfterLoad()          //加载完成
 	OnLoad(name string)  //加载字段name(struct的变量名)
 }
 
-//LoadExls 加载Exls文件
-func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData) interface{} {
+//LoadXlsx 加载xlsx文件
+//TODO: 对于[]uint64 map[uint64]uint64等的容器类型,需要在顶一个tag表示分隔符
+func LoadXlsx(excelFileName string, sheetName string, dataType interfaceXlsxData) interface{} {
 	dm := reflect.MakeMap(reflect.MapOf(reflect.TypeOf(uint64(0)), reflect.TypeOf(dataType)))
 
 	xlFile, err := xlsx.OpenFile(excelFileName)
-	if err != nil {
-		log.Trace("加载配置文件 %s 失败", excelFileName)
-	} else {
-		log.Trace("加载配置文件 %s ", excelFileName)
+
+	count := 0
+	for count < 6 && err != nil {
+		log.Trace("重新读取配置文件 %s 上次加载失败 %s", excelFileName, err)
+		time.Sleep(time.Second * 10)
+		xlFile, err = xlsx.OpenFile(excelFileName)
+		count++
 	}
 
+	if err != nil {
+		log.Trace("加载配置文件 %s 失败 %s", excelFileName, err)
+		return nil
+	}
+
+	log.Trace("加载配置文件 %s ==> %s", excelFileName, sheetName)
+	foundSheet := false
 	for _, sheet := range xlFile.Sheets {
 		if sheet.Name == sheetName {
+			foundSheet = true
 			colName := make(map[int]string)
 			tableName := make(map[string]bool)
 			{
-				s := reflect.New(reflect.TypeOf(dataType).Elem()).Interface().(interfaceElsxData)
+				s := reflect.New(reflect.TypeOf(dataType).Elem()).Interface().(interfaceXlsxData)
 				e := reflect.TypeOf(s).Elem()
 				for i := 0; i < e.NumField(); i++ {
 					tn := e.Field(i).Tag.Get("xlsx")
@@ -74,14 +87,20 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 					}
 
 					dataReady := false
-					data := reflect.New(reflect.TypeOf(dataType).Elem()).Interface().(interfaceElsxData)
+					data := reflect.New(reflect.TypeOf(dataType).Elem()).Interface().(interfaceXlsxData)
 					s := reflect.TypeOf(data).Elem()
 					for i := 0; i < s.NumField(); i++ {
 						tagName := s.Field(i).Tag.Get("xlsx")
+						sep1 := s.Field(i).Tag.Get("sep1")
+						sep2 := s.Field(i).Tag.Get("sep2")
 						if len(tagName) == 0 {
 							continue
 						}
 						//log.Debug("%d: %s", i, tagName)
+						if s.Field(i).Type.Kind() == reflect.Ptr {
+							v := reflect.ValueOf(data).Elem()
+							v.Field(i).Set(reflect.New(s.Field(i).Type.Elem()))
+						}
 						if cell, ok := cells[tagName]; ok {
 							if len(cell.Value) > 0 {
 								dataReady = true
@@ -152,6 +171,12 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 									reflect.ValueOf(data).Elem().Field(i).SetFloat(value)
 								}
 							case reflect.Map:
+								if len(sep1) == 0 {
+									sep1 = ";"
+								}
+								if len(sep2) == 0 {
+									sep2 = ":"
+								}
 								typeName := s.Field(i).Type.String()
 								if typeName == "map[uint64]uint64" {
 									if reflect.ValueOf(data).Elem().Field(i).IsNil() {
@@ -159,9 +184,9 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 											reflect.MakeMap(reflect.MapOf(reflect.TypeOf(uint64(0)), reflect.TypeOf(uint64(0)))))
 									}
 									value, _ := cell.String()
-									ss1 := strings.Split(value, ";")
+									ss1 := strings.Split(value, sep1)
 									for _, s1 := range ss1 {
-										ss2 := strings.Split(s1, ":")
+										ss2 := strings.Split(s1, sep2)
 										if len(ss2) == 2 {
 											nk, err1 := strconv.ParseUint(ss2[0], 10, 64)
 											nv, err2 := strconv.ParseUint(ss2[1], 10, 64)
@@ -176,7 +201,7 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 											reflect.MakeMap(reflect.MapOf(reflect.TypeOf(uint64(0)), reflect.TypeOf(struct{}{}))))
 									}
 									value, _ := cell.String()
-									ss1 := strings.Split(value, ";")
+									ss1 := strings.Split(value, sep1)
 									for _, s1 := range ss1 {
 										nk, err := strconv.ParseUint(s1, 10, 64)
 										if err == nil {
@@ -187,6 +212,9 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 								}
 								//log.Debug("======> %s", typeName)
 							case reflect.Slice:
+								if len(sep1) == 0 {
+									sep1 = ";"
+								}
 								typeName := s.Field(i).Type.String()
 								if typeName == "[]uint64" {
 									if reflect.ValueOf(data).Elem().Field(i).IsNil() {
@@ -194,7 +222,7 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 											reflect.MakeSlice(reflect.TypeOf(make([]uint64, 0, 0)), 0, 10))
 									}
 									value, _ := cell.String()
-									ss1 := strings.Split(value, ";")
+									ss1 := strings.Split(value, sep1)
 									for _, s1 := range ss1 {
 										nk, err := strconv.ParseUint(s1, 10, 64)
 										if err == nil {
@@ -207,11 +235,76 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 										}
 									}
 									//log.Debug("======================>>>>>>>>> ===> %v", reflect.ValueOf(data).Elem().Field(i))
+								} else if typeName == "[]float32" {
+									if reflect.ValueOf(data).Elem().Field(i).IsNil() {
+										reflect.ValueOf(data).Elem().Field(i).Set(
+											reflect.MakeSlice(reflect.TypeOf(make([]float32, 0, 0)), 0, 10))
+									}
+									value, _ := cell.String()
+									ss1 := strings.Split(value, sep1)
+									for _, s1 := range ss1 {
+										nk, err := strconv.ParseFloat(s1, 64)
+										if err == nil {
+											reflect.ValueOf(data).Elem().Field(i).Set(
+												reflect.Append(
+													reflect.ValueOf(data).Elem().Field(i),
+													reflect.ValueOf(float32(nk)),
+												),
+											)
+										}
+									}
+									//log.Debug("======================>>>>>>>>> ===> %v", reflect.ValueOf(data).Elem().Field(i))
+								} else if typeName == "[]string" {
+									if reflect.ValueOf(data).Elem().Field(i).IsNil() {
+										reflect.ValueOf(data).Elem().Field(i).Set(
+											reflect.MakeSlice(reflect.TypeOf(make([]string, 0, 0)), 0, 10))
+									}
+									value, _ := cell.String()
+									ss1 := strings.Split(value, sep1)
+									for _, s1 := range ss1 {
+										strings.Trim(s1, " ")
+										if len(s1) > 0 {
+											reflect.ValueOf(data).Elem().Field(i).Set(
+												reflect.Append(
+													reflect.ValueOf(data).Elem().Field(i),
+													reflect.ValueOf(s1),
+												),
+											)
+										}
+									}
 								}
-								//log.Debug("======> %s", typeName)
+							case reflect.Ptr:
+								v := reflect.ValueOf(data).Elem()
+								f := v.Field(i).MethodByName("ParseStr")
+								if f.IsValid() && f.Kind() == reflect.Func && f.Type().NumIn() == 1 {
+									val, _ := cell.String()
+									f.Call([]reflect.Value{reflect.ValueOf(val)})
+								} else {
+									log.Debug("====================== unknown type %d ===> %s", s.Field(i).Type.Kind(), s.Field(i).Type.String())
+								}
 							default:
 								typeName := s.Field(i).Type.String()
-								log.Debug("====================== unknow type %d ===> %s", s.Field(i).Type.Kind(), typeName)
+								if typeName == "time.Time" {
+									if sep1 == "" {
+										sep1 = "2006-1-2 15:04:05"
+									}
+									value, err := cell.String()
+
+									var timeValue time.Time
+									if err != nil {
+										timeValue = time.Unix(0, 0)
+									} else {
+										//timeValue, err = time.Parse(sep1, value)
+										timeValue, err = time.ParseInLocation(sep1, value, time.Local)
+										if err != nil {
+											timeValue = time.Unix(0, 0)
+											log.Error("加载Excel失败 类型time %s: %s", value, err)
+										}
+									}
+									reflect.ValueOf(data).Elem().Field(i).Set(reflect.ValueOf(timeValue))
+								} else {
+									log.Debug("====================== unknown type %d ===> %s", s.Field(i).Type.Kind(), typeName)
+								}
 							}
 							data.OnLoad(s.Field(i).Name)
 
@@ -221,7 +314,8 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 							for k, v := range cells {
 								str = str + fmt.Sprintf("%v,%v| ", k, v)
 							}
-							log.Warning("读取配置 %s,%s 无效字段[%s] ==> %s", excelFileName, sheetName, tagName, str)
+							//TODO: 这里处理默认数值
+							//log.Warning("读取配置 %s,%s 无效字段[%s] ==> %s", excelFileName, sheetName, tagName, str)
 
 							//dataReady = false
 						}
@@ -235,6 +329,9 @@ func LoadExls(excelFileName string, sheetName string, dataType interfaceElsxData
 				}
 			}
 		}
+	}
+	if foundSheet == false {
+		log.Error("===== 读取配置 %s,%s 表格没有相应的sheet", excelFileName, sheetName)
 	}
 	return dm.Interface()
 }

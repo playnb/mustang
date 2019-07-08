@@ -1,7 +1,8 @@
 package network
 
 import (
-	"github.com/playnb/mustang/log"
+	"cell/common/mustang/log"
+	"errors"
 	"net"
 	"net/http"
 	"sync"
@@ -12,18 +13,16 @@ import (
 
 //wsHandler 实现net.http.handler接口,每次HTTP请求的时候被调用,用于产生链接
 type wsHandler struct {
-	maxConnNum      int
-	pendingWriteNum int
-	newAgent        func(*WSConn) IAgent
-	upgrader        websocket.Upgrader
-	conns           websocketConnSet
-	mutexConns      sync.Mutex
-	wg              sync.WaitGroup
+	server     *WSServer
+	upgrader   websocket.Upgrader
+	conns      websocketConnSet
+	mutexConns sync.Mutex
+	wg         sync.WaitGroup
 }
 
 func (handler *wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer log.PrintPanicStack()
-	log.Trace("new connect from %s(url:%s)", r.RemoteAddr, r.RequestURI)
+	log.Trace("New from %s(url:%s)", r.RemoteAddr, r.RequestURI)
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
 		return
@@ -35,9 +34,6 @@ func (handler *wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handler.wg.Add(1)
-	defer handler.wg.Done()
-
 	handler.mutexConns.Lock()
 	if handler.conns == nil {
 		handler.mutexConns.Unlock()
@@ -45,7 +41,7 @@ func (handler *wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Error("upgrade error: nil <%v>", conn)
 		return
 	}
-	if len(handler.conns) >= handler.maxConnNum {
+	if len(handler.conns) >= handler.server.MaxConnNum {
 		handler.mutexConns.Unlock()
 		conn.Close()
 		log.Error("too many connections <%v>", conn)
@@ -54,22 +50,27 @@ func (handler *wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.conns[conn] = struct{}{}
 	handler.mutexConns.Unlock()
 
-	wsConn := newWSConn(conn, handler.pendingWriteNum)
-	agent := handler.newAgent(wsConn)
-	agent.Run(agent)
+	wsConn := newWSConn(conn, handler.server.PendingWriteNum)
+	wsConn.SetAgentObj(handler.server.NewAgent(wsConn), handler.server)
+
+	handler.wg.Add(1)
+	defer handler.wg.Done()
+
+	log.Trace("Begin Loop %s(url:%s)[%s]", r.RemoteAddr, r.RequestURI, wsConn)
+
+	go wsConn.SendLoop()
+	wsConn.RecvLoop()
 
 	// cleanup
-	agent.CloseFunc()
-	wsConn.Close()
-	handler.mutexConns.Lock()
-	delete(handler.conns, conn)
-	handler.mutexConns.Unlock()
+	handler.server.OnTCPConnClose(wsConn)
+	log.Trace("Close %s(url:%s)[%s]", r.RemoteAddr, r.RequestURI, wsConn)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //WSServer websocket服务器
 type WSServer struct {
+	opts            *ServerOptions
 	Addr            string
 	MaxConnNum      int //最大连接数量
 	PendingWriteNum int //最大消息队列数量
@@ -77,6 +78,7 @@ type WSServer struct {
 	HTTPTimeout     time.Duration //http超时时间(ms)
 	ln              net.Listener
 	handler         *wsHandler
+	wg              sync.WaitGroup
 }
 
 //Start 启动一个HTTP服务器,在Addr指定的地址
@@ -91,10 +93,8 @@ func (server *WSServer) Start() {
 
 	server.ln = ln
 	server.handler = &wsHandler{
-		maxConnNum:      server.MaxConnNum,
-		pendingWriteNum: server.PendingWriteNum,
-		newAgent:        server.NewAgent,
-		conns:           make(websocketConnSet),
+		server: server,
+		conns:  make(websocketConnSet),
 		upgrader: websocket.Upgrader{ //Upgrader对象
 			ReadBufferSize:   64 * 1024,                                  //读缓冲
 			WriteBufferSize:  64 * 1024,                                  //写缓冲
@@ -116,7 +116,7 @@ func (server *WSServer) Start() {
 	go httpServer.Serve(ln)
 }
 
-//Close 关闭服务器
+//CloseSession 关闭服务器
 func (server *WSServer) Close() {
 	//关闭所有websocket连接
 	server.handler.mutexConns.Lock()
@@ -150,4 +150,28 @@ func (server *WSServer) checkValid() {
 		server.HTTPTimeout = 10 * time.Second
 		log.Trace("invalid HTTPTimeout, reset to %v", server.HTTPTimeout)
 	}
+}
+
+func (server *WSServer) OnTCPConnClose(tcpConn IConn) {
+	server.handler.mutexConns.Lock()
+	delete(server.handler.conns, tcpConn.(*WSConn).conn)
+	server.handler.mutexConns.Unlock()
+}
+
+func NewWebsocketServer(opts *ServerOptions) Server {
+	if opts == nil {
+		panic(errors.New("创建服务器的opts不能为空"))
+	}
+	if opts.NewAgent == nil {
+		panic(errors.New("创建服务器的NewAgent不能为空"))
+	}
+	server := &WSServer{}
+	server.opts = opts
+	server.Addr = opts.BindAddr
+	log.Trace("%s 初始化Websocket服务 %s", server.opts.Name, server.opts.BindAddr)
+
+	server.MaxConnNum = opts.MaxConnNum
+	server.PendingWriteNum = opts.PendingWriteNum
+	server.NewAgent = func(conn *WSConn) IAgent { return opts.NewAgent(conn) }
+	return server
 }

@@ -62,7 +62,7 @@ func Fatal(format string, a ...interface{}) {
 }
 
 func Flush() {
-	//gLogger.Close()
+	//gLogger.CloseSession()
 	glog.Flush()
 }
 */

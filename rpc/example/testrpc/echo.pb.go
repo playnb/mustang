@@ -99,7 +99,7 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for EchoService service
+// Client API for EchoService proxy
 
 type EchoServiceClient interface {
 	Echo(ctx context.Context, in *RequestEcho, opts ...grpc.CallOption) (*ReplyEcho, error)
@@ -122,7 +122,7 @@ func (c *echoServiceClient) Echo(ctx context.Context, in *RequestEcho, opts ...g
 	return out, nil
 }
 
-// Server API for EchoService service
+// Server API for EchoService proxy
 
 type EchoServiceServer interface {
 	Echo(context.Context, *RequestEcho) (*ReplyEcho, error)
