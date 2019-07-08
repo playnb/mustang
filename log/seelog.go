@@ -1,7 +1,6 @@
 package log
 
 import (
-	"github.com/playnb/config"
 	"flag"
 	"fmt"
 	"os"
@@ -287,10 +286,8 @@ func Ltp(format string, a ...interface{}) {
 }
 
 func Dev(format string, a ...interface{}) {
-	if config.IsDev() {
-		//seelog.Debugf(format, a...)
-		seelog.Debug(fmt.Sprintf(format, a...))
-	}
+	//seelog.Debugf(format, a...)
+	seelog.Debug(fmt.Sprintf(format, a...))
 }
 
 func Lw(format string, a ...interface{}) {
