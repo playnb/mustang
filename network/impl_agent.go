@@ -1,8 +1,8 @@
 package network
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/util"
 	"context"
 	"net"
 	"sync"

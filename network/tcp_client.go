@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 )
 
 //TCPClient Tcp客户端

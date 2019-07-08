@@ -1,7 +1,7 @@
 package signals
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"container/list"
 	"os"
 	"os/signal"

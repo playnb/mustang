@@ -1,7 +1,7 @@
 package push
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"encoding/json"
 	"fmt"
 	"github.com/json-iterator/go"

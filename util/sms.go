@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 )
 
 func _getHttpClient() *http.Client {

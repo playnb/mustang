@@ -1,6 +1,6 @@
 package sms
 
-import "cell/common/mustang/aliyun/common"
+import "github.com/playnb/mustang/aliyun/common"
 
 const (
 	SmsEndPoint   = "https://dysmsapi.aliyuncs.com"

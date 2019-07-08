@@ -1,7 +1,7 @@
 package redislock
 
 import (
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/util"
 	"errors"
 	"github.com/go-redis/redis"
 	"strconv"

@@ -2,7 +2,7 @@ package fsm
 
 import (
 	"strings"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 )
 
 type InitState struct {

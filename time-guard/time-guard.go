@@ -1,7 +1,7 @@
 package time_guard
 
 import (
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/util"
 	"fmt"
 	"sync"
 	"sync/atomic"

@@ -1,7 +1,7 @@
 package store
 
 import (
-	"cell/common/mustang/redis"
+	"github.com/playnb/mustang/redis"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/proto/testdata"

@@ -1,10 +1,10 @@
 package util
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/message_queue"
-	"cell/common/mustang/message_queue/message_queue_nats"
-	"cell/common/mustang/signals"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/message_queue"
+	"github.com/playnb/mustang/message_queue/message_queue_nats"
+	"github.com/playnb/mustang/signals"
 	"net"
 	"runtime"
 	"sync"

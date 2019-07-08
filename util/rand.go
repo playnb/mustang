@@ -1,7 +1,7 @@
 package util
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"encoding/gob"
 	"math/rand"
 	"os"

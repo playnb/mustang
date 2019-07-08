@@ -1,8 +1,8 @@
 package message_queue_nats
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/message_queue"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/message_queue"
 
 	"github.com/nats-io/nats"
 	"github.com/nats-io/nats/encoders/protobuf"

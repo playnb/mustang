@@ -1,7 +1,7 @@
 package log
 
 import (
-	"cell/common/config"
+	"github.com/playnb/config"
 	"flag"
 	"fmt"
 	"os"

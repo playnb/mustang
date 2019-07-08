@@ -1,7 +1,7 @@
 package util_db
 
 import (
-	time_guard "cell/common/mustang/time-guard"
+	time_guard "github.com/playnb/mustang/time-guard"
 	"gopkg.in/mgo.v2"
 )
 

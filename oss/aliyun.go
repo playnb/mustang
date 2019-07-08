@@ -1,7 +1,7 @@
 package oss
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"io/ioutil"
 	"strings"

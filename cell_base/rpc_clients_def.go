@@ -1,9 +1,9 @@
 package cell_base
 
 import (
-	"cell/common/config"
-	"cell/common/mustang/log"
-	"cell/common/protocol/msg"
+	"github.com/playnb/config"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/protocol/msg"
 	"fmt"
 	"math/rand"
 	"sync"

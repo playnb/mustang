@@ -1,7 +1,7 @@
 package counter
 
 import (
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/util"
 	"github.com/go-redis/redis"
 )
 

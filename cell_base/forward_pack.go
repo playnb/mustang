@@ -1,12 +1,12 @@
 package cell_base
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/network"
-	"cell/common/mustang/network/msg_processor"
-	"cell/common/mustang/util"
-	"cell/common/protocol"
-	"cell/common/protocol/msg"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/mustang/network/msg_processor"
+	"github.com/playnb/mustang/util"
+	"github.com/playnb/protocol"
+	"github.com/playnb/protocol/msg"
 	"sync"
 	"time"
 )

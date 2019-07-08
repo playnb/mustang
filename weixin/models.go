@@ -1,8 +1,8 @@
 package weixin
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/redis"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/redis"
 	"encoding/json"
 )
 

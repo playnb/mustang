@@ -2,8 +2,8 @@ package push
 
 import (
 	"bytes"
-	"cell/common/mustang/log"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/util"
 	"fmt"
 	"github.com/json-iterator/go"
 	"io/ioutil"

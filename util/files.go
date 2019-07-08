@@ -4,7 +4,7 @@ package util
 
 import (
 	"bufio"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"io/ioutil"
 
 	//	"common/protocol/msg"

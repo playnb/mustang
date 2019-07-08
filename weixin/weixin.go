@@ -1,7 +1,7 @@
 package weixin
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"crypto/sha1"
 	"encoding/xml"
 	"errors"

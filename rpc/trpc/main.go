@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cell/common/mustang/rpc/example/testrpc"
+	"github.com/playnb/mustang/rpc/example/testrpc"
 	"fmt"
 	"sync"
 	"time"

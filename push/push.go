@@ -1,7 +1,7 @@
 package push
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
 	"strings"

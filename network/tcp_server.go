@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"fmt"
 )
 

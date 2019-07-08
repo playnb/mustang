@@ -1,12 +1,12 @@
 package cell_base
 
 import (
-	"cell/common/config"
-	"cell/common/mustang/log"
-	"cell/common/mustang/network"
-	"cell/common/mustang/network/msg_processor"
-	"cell/common/protocol"
-	"cell/common/protocol/msg"
+	"github.com/playnb/config"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/mustang/network/msg_processor"
+	"github.com/playnb/protocol"
+	"github.com/playnb/protocol/msg"
 	"context"
 	"fmt"
 	"sync"
@@ -14,7 +14,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/util"
 
 	"github.com/gogo/protobuf/proto"
 	"qiniupkg.com/x/errors.v7"

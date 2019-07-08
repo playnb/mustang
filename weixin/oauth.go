@@ -3,7 +3,7 @@ package weixin
 import (
 	"encoding/json"
 	//"github.com/playnb/mustang/auth"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	//"golang.org/x/oauth2"
 	"fmt"
 	"io/ioutil"

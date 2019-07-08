@@ -3,7 +3,7 @@ package util
 import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"strconv"
 	"strings"
 )

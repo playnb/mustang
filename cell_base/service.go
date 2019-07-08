@@ -1,6 +1,6 @@
 package cell_base
 
-import "cell/common/mustang/util"
+import "github.com/playnb/mustang/util"
 
 type IService interface {
 	util.IService

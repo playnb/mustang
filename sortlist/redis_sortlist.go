@@ -1,8 +1,8 @@
 package sortlist
 
 import (
-	"cell/common/mustang/redis"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/redis"
+	"github.com/playnb/mustang/util"
 	R "github.com/go-redis/redis"
 	"reflect"
 	"strconv"

@@ -1,7 +1,7 @@
 package tbl
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"fmt"
 	"reflect"
 	"strconv"

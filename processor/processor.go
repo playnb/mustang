@@ -1,9 +1,9 @@
 package processor
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/network"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/mustang/util"
 	"errors"
 )
 

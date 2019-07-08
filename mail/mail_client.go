@@ -1,8 +1,8 @@
 package mail
 
 import (
-	"cell/common/mustang/mail/mail-server"
-	"cell/common/mustang/mail/mail-server/pb"
+	"github.com/playnb/mustang/mail/mail-server"
+	"github.com/playnb/mustang/mail/mail-server/pb"
 	"cell/conf"
 	"fmt"
 	"google.golang.org/grpc"

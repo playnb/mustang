@@ -1,8 +1,8 @@
 package cell_base
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/protocol/msg"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/protocol/msg"
 	"sync"
 
 	"golang.org/x/net/context"

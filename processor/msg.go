@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"cell/common/mustang/network"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/mustang/util"
 	"encoding/binary"
 	"sync"
 	"sync/atomic"

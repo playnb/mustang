@@ -4,7 +4,7 @@ import (
 	"github.com/qiniu/api.v7/auth/qbox"
 	"github.com/qiniu/api.v7/storage"
 	"golang.org/x/net/context"
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"io"
 )
 

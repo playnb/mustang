@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"cell/common/mustang/rpc/wire"
+	"github.com/playnb/mustang/rpc/wire"
 	"errors"
 	"fmt"
 	"io"

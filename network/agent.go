@@ -1,7 +1,7 @@
 package network
 
 import (
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/util"
 	"net"
 	"sync/atomic"
 )

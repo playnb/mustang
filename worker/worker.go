@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"fmt"
 )
 

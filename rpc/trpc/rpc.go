@@ -1,8 +1,8 @@
 package main
 
 import (
-	protorpc "cell/common/mustang/rpc"
-	"cell/common/mustang/rpc/example/testrpc"
+	protorpc "github.com/playnb/mustang/rpc"
+	"github.com/playnb/mustang/rpc/example/testrpc"
 	"io"
 	"log"
 	"net"

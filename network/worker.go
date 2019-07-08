@@ -1,7 +1,7 @@
 package network
 
 import (
-	"cell/common/mustang/log"
+	"github.com/playnb/mustang/log"
 	"context"
 	"errors"
 	"sync"

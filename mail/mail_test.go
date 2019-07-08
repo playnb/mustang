@@ -1,9 +1,9 @@
 package mail
 
 import (
-	"cell/common/mustang/mail/mail-server/pb"
-	"cell/common/mustang/redis"
-	"cell/common/mustang/util"
+	"github.com/playnb/mustang/mail/mail-server/pb"
+	"github.com/playnb/mustang/redis"
+	"github.com/playnb/mustang/util"
 	"cell/conf"
 	"context"
 	"testing"

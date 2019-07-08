@@ -1,9 +1,9 @@
 package cell_base
 
 import (
-	"cell/common/mustang/log"
-	"cell/common/mustang/network"
-	"cell/common/protocol/msg"
+	"github.com/playnb/mustang/log"
+	"github.com/playnb/mustang/network"
+	"github.com/playnb/protocol/msg"
 )
 
 type CellAgent struct {
