@@ -327,6 +327,13 @@ func Fatal(format string, a ...interface{}) {
 	seelog.Critical(fmt.Sprintf(format, a...))
 }
 
+func LogError(err error) {
+	//seelog.Criticalf(format, a...)
+	if err != nil {
+		seelog.Error(err.Error())
+	}
+}
+
 // func InfoData(format string, a ...interface{}) {
 // 	//seelog.InfofData(format, a...)
 // 	seelog.InfofData("%s", fmt.Sprintf(format, a...))
