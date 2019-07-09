@@ -27,3 +27,12 @@ func FullVersion() string {
 	return fmt.Sprintf("Version: %6s \nGit commit: %6s \nGo version: %6s \nBuild time: %6s \n",
 		Version, GitCommit, GoVersion, BuildTime)
 }
+
+func FullVersionJson() map[string]string {
+	return map[string]string{
+		"Version":   Version,
+		"GitCommit": GitCommit,
+		"GoVersion": GoVersion,
+		"BuildTime": BuildTime,
+	}
+}
