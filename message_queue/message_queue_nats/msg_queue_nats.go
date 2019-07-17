@@ -4,8 +4,8 @@ import (
 	"github.com/playnb/mustang/log"
 	"github.com/playnb/mustang/message_queue"
 
-	"github.com/nats-io/nats"
-	"github.com/nats-io/nats/encoders/protobuf"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/encoders/protobuf"
 )
 
 type MsgQueue struct {

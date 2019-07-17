@@ -1,7 +1,7 @@
 package message_queue
 
 import (
-	"github.com/nats-io/nats"
+	nats "github.com/nats-io/nats.go"
 )
 
 type IMsgQueue interface {

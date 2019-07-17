@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.4.0
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/json-iterator/go v1.1.6
+	github.com/nats-io/nats.go v1.8.1
 	github.com/spf13/viper v1.4.0
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 )
